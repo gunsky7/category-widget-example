@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:categorywidget/api.dart';
 import 'package:categorywidget/backdrop.dart';
 import 'package:categorywidget/unit_converter.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,7 @@ class _CategoryRouteState extends State<CategoryRoute> {
     super.didChangeDependencies();
     if (_categories.isEmpty) {
       await _retrieveLocalCategories();
+      await _retrieveApiCategories();
     }
   }
 
@@ -116,6 +118,38 @@ class _CategoryRouteState extends State<CategoryRoute> {
       });
       categoryIndex++;
     });
+  }
+
+  Future<void> _retrieveApiCategories() async {
+    setState(() {
+      _categories.add(Category(
+        name: apiCategory["name"],
+        units: [],
+        color: _baseColors.last,
+        iconLocation: _icons.last,
+      ));
+    });
+
+    final api = Api();
+    final jsonUnits = await api.getUnits(apiCategory["route"]);
+
+    if (jsonUnits != null) {
+      final units = <Unit>[];
+
+      for (var unit in jsonUnits) {
+        units.add(Unit.fromJson(unit));
+      }
+
+      setState(() {
+        _categories.removeLast();
+        _categories.add(Category(
+          name: apiCategory["name"],
+          units: units,
+          color: _baseColors.last,
+          iconLocation: _icons.last,
+        ));
+      });
+    }
   }
 
   /// Function to call when a [Category] is tapped.
